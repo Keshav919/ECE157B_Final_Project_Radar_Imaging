@@ -34,7 +34,7 @@ for i = 1:4
     plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
 
     [~, peak] = max(abs(mean(diff(RangeFFT(:,:,ant),1),1)));%??????
-    fprintf("The peak is at index"+peak+".\n")
+    fprintf("The peak is at index "+peak+".\n")
 
     bhFFT = fftshift(fft(unwrap(angle(RangeFFT(:,peak,2)))));
     f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
