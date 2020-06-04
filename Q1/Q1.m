@@ -34,11 +34,21 @@ for i = 1:4
     plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
 
     [~, peak] = max(abs(mean(diff(RangeFFT(:,:,ant),1),1)));%??????
-    fprintf("The peak is at index "+peak+".\n")
+    fprintf("Dataset "+i+". The peak is at index "+peak+".\n")
 
-    bhFFT = fftshift(fft(unwrap(angle(RangeFFT(:,peak,2)))));
+    bhFFT = fftshift(fft(unwrap(angle(RangeFFT(1:end-mod(size(RangeFFT,1),2),peak,2)))));
     f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
     figure
     stem(f,10*log10(abs(bhFFT)))
     xlim([-2,2])
+    
+    %bfrange = find((f>0.2) & (f<0.42));
+    bfiltered = abs(bhFFT);
+    bfiltered((f<0.2) | (f>0.42)) = 0;
+    [~, b_idx] = max(bfiltered);    
+    hfiltered = abs(bhFFT);
+    hfiltered((f<1) | (f>1.5)) = 0;
+    [~, h_idx] = max(hfiltered);   
+
+    fprintf("The breathing rate is "+f(b_idx)+"Hz. The heart rate is "+f(h_idx)+"Hz.\n")
 end
