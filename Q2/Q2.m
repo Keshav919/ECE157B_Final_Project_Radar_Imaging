@@ -64,7 +64,7 @@ stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
 
 bfiltered = abs(bhFFT);
-bfiltered((f<0.2) | (f>0.42)) = 0;
+bfiltered((f<0.21) | (f>0.42)) = 0;
 [~, b_idx] = max(bfiltered);
 hfiltered = abs(bhFFT);
 hfiltered((f<1) | (f>1.5)) = 0;
@@ -86,7 +86,7 @@ stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
 
 bfiltered = abs(bhFFT);
-bfiltered((f<0.2) | (f>0.42)) = 0;
+bfiltered((f<0.21) | (f>0.42)) = 0;
 [~, b_idx] = max(bfiltered);
 hfiltered = abs(bhFFT);
 hfiltered((f<1) | (f>1.5)) = 0;
