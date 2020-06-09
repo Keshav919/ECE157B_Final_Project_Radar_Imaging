@@ -63,12 +63,21 @@ figure
 stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
 
+% breathing peak finding
 bfiltered = abs(bhFFT);
-bfiltered((f<0.21) | (f>0.42)) = 0;
-[~, b_idx] = max(bfiltered);
+bfiltered((f<0.1) | (f>0.5)) = 0;
+[~, b_unfilt_idx] = findpeaks(bfiltered);
+b_filtered_idx = b_unfilt_idx((b_unfilt_idx>max(find(f<0.21))) & (b_unfilt_idx<min(find(f>0.42))));
+[~, b_filt_idx] = max(bfiltered(b_filtered_idx));
+b_idx = b_filtered_idx(b_filt_idx);
+% heart peak finding
 hfiltered = abs(bhFFT);
-hfiltered((f<1) | (f>1.5)) = 0;
-[~, h_idx] = max(hfiltered);
+hfiltered((f<0.9) | (f>1.6)) = 0;
+[~, h_unfilt_idx] = findpeaks(hfiltered);
+h_filtered_idx = h_unfilt_idx((h_unfilt_idx>max(find(f<1.1))) & (h_unfilt_idx<min(find(f>1.5))));
+[~, h_filt_idx] = max(hfiltered(h_filtered_idx));
+h_idx = h_filtered_idx(h_filt_idx);
+
 
 fprintf("The breathing rate is "+f(b_idx)+"Hz. The heart rate is "+f(h_idx)+"Hz.\n")
 
@@ -85,11 +94,19 @@ figure
 stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
 
+% breathing peak finding
 bfiltered = abs(bhFFT);
-bfiltered((f<0.21) | (f>0.42)) = 0;
-[~, b_idx] = max(bfiltered);
+bfiltered((f<0.1) | (f>0.5)) = 0;
+[~, b_unfilt_idx] = findpeaks(bfiltered);
+b_filtered_idx = b_unfilt_idx((b_unfilt_idx>max(find(f<0.21))) & (b_unfilt_idx<min(find(f>0.42))));
+[~, b_filt_idx] = max(bfiltered(b_filtered_idx));
+b_idx = b_filtered_idx(b_filt_idx);
+% heart peak finding
 hfiltered = abs(bhFFT);
-hfiltered((f<1) | (f>1.5)) = 0;
-[~, h_idx] = max(hfiltered);
+hfiltered((f<0.9) | (f>1.6)) = 0;
+[~, h_unfilt_idx] = findpeaks(hfiltered);
+h_filtered_idx = h_unfilt_idx((h_unfilt_idx>max(find(f<1.1))) & (h_unfilt_idx<min(find(f>1.5))));
+[~, h_filt_idx] = max(hfiltered(h_filtered_idx));
+h_idx = h_filtered_idx(h_filt_idx);
 
 fprintf("The breathing rate is "+f(b_idx)+"Hz. The heart rate is "+f(h_idx)+"Hz.\n")
