@@ -57,6 +57,8 @@ amp = absdiff_anglerange;
 amp(amp<100) = 0;
 [x1,y1] = find(imregionalmax(amp)==1);
 
+fprintf("The location of the first person is at distance " + distance_range(y1) + "m and angle " + angle_vals(x1) + "degree.\n")
+
 bhFFT = fftshift(fft(unwrap(angle(AngleRangeFFT(1:end-mod(size(RangeFFT,1),2),x1,y1))))); % angle based analyzing
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
 figure
@@ -87,6 +89,8 @@ amp = absdiff_anglerange;
 amp(:,y1-5:y1+5) = 0;
 amp(amp<40) = 0;
 [x2,y2] = find(imregionalmax(amp)==1);
+
+fprintf("The location of the first person is at distance " + distance_range(y2) + "m and angle " + angle_vals(x2) + "degree.\n")
 
 bhFFT = fftshift(fft(unwrap(angle(AngleRangeFFT(1:end-mod(size(RangeFFT,1),2),x2,y2))))); % angle based analyzing
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
