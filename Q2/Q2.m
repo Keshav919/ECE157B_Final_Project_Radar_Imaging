@@ -33,8 +33,9 @@ tau_max = f_max/k;
 tau_range = 0:tau_resolution:tau_max-tau_resolution;
 distance_range = c*tau_range/2;
 ant = 4;
-figure;
-plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
+% figure;
+% plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
+
 
 theta_range = asind(lambda/2/sRx);%From the lecture
 theta_resolution = asind(lambda/nRx/sRx);%From the lecture
@@ -48,9 +49,11 @@ figure;
 %[X,Y] = meshgrid(angle_vals,t*c/2);
 absdiff_anglerange = squeeze(abs(mean(diff(AngleRangeFFT,1,1),1)))';
 surface(distance_range,angle_vals,absdiff_anglerange);
+colorbar;
 xlim([0 10])
 xlabel("Distance")
 ylabel("Angle")
+title("AngleRangeFFT")
 
 % person 1 location
 amp = absdiff_anglerange;
@@ -61,6 +64,7 @@ bhFFT = fftshift(fft(unwrap(angle(AngleRangeFFT(1:end-mod(size(RangeFFT,1),2),x1
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
 figure
 stem(f,10*log10(abs(bhFFT)))
+title("Phase FFT to get Breathing and HeartBeat for Person 1")
 xlim([-2,2])
 
 % breathing peak finding
@@ -92,6 +96,7 @@ bhFFT = fftshift(fft(unwrap(angle(AngleRangeFFT(1:end-mod(size(RangeFFT,1),2),x2
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
 figure
 stem(f,10*log10(abs(bhFFT)))
+title("Phase FFT to get Breathing and HeartBeat for Person 2")
 xlim([-2,2])
 
 % breathing peak finding

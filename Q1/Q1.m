@@ -55,6 +55,7 @@ for i = 1:4
     xlim([0 10])
     xlabel("Distance")
     ylabel("Angle")
+    title(["AngleRangeFFT" "_" num2str(i)])
     
     [angle_idx,d_idx] = find(absdiff_anglerange == max(absdiff_anglerange,[],'all'));
     fprintf("In Dataset "+i+", the person is at the location with " + distance_range(d_idx) + "m distance and "+ angle_vals(angle_idx) + " degree angle.\n")
@@ -63,6 +64,8 @@ for i = 1:4
     f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
     figure
     stem(f,10*log10(abs(bhFFT)))
+    xlabel("Frequency (Hz)")
+    title(["Phase FFT to get Breathing and HeartBeat" "_" num2str(i)])
     xlim([-2,2])
     
     % breathing peak finding
