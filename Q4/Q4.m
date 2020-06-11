@@ -16,7 +16,7 @@ adcData_breathing_heart_t4 = adcData_breathing_heart;
 
 %% view all the data to see what is going on
 
-plot(real(adcData_breathing_heart_r1(:,:,1)))
+% plot(real(adcData_breathing_heart_r1(:,:,1)))
 
 %% constants
 f_start = 77e9;
@@ -45,7 +45,7 @@ ant = 1;
 
 %% Range FFT
 
-adc_sampled = adcData_breathing_heart_t3(100:end-10,:,:);
+adc_sampled = adcData_breathing_heart_t1(100:end-10,:,:);
 RangeFFT = fft(adc_sampled(:,:,ant),N_sample,2);
 N_frame = size(adc_sampled,1);
 t_frame = (1:size(adc_sampled,1))*T_frame;
@@ -55,9 +55,10 @@ tau_max = f_max/k;
 tau_range = 0:tau_resolution:tau_max-tau_resolution;
 distance_range = c*tau_range/2;
 
-figure
-imagesc(distance_range, t_frame, abs(RangeFFT))
+% figure
+% imagesc(distance_range, t_frame, abs(RangeFFT))
 
+% Plot differentiated peaks
 figure
 imagesc(distance_range, t_frame, abs(diff(RangeFFT)))
 
@@ -110,24 +111,22 @@ v_measure = diff(P_loc_meas)/dt;
 v_measure = movmean(v_measure,200);
 P_loc_meas = P_loc_meas(101:end-101);
 
-% Define update equations (Coefficent matrices): A physics based model for where we expect the person to be [state transition (state + velocity)] + [input control (acceleration)]
+% Define update equations (Coefficent matrices)
 A = [1 dt; 0 1] ; % state transition matrix
 B = [dt^2/2; dt]; % input control matrix
 C = [1 0; 0 1]; % measurement matrix, only measuring position
 
 % Define main variables
 u = 0; % define acceleration magnitude, constant velocity
-X = [P_loc_meas(1); -0.06]; % initized state- [position; velocity]
-X_estimate = X;  % x_estimate of initial location estimation of where the person is (what we are updating)
-personAccel_noise_mag = 1e-3; %process noise: the variability in how fast the person is speeding up (stdv of acceleration: meters/sec^2)
+X = [P_loc_meas(1); -0.06]; % initized state - [position; velocity]
+X_estimate = X;  % x_estimate of initial location estimation
+personAccel_noise_mag = 1e-3; % process noise
 Measure_noise_x = 0.05; % location measurement noise
 Measure_noise_v = 0.1; % velocity measurement noise
 R = [Measure_noise_x^2 0; 0 Measure_noise_v^2];% Ez convert the measurement noise (stdv) into covariance matrix
 Ex = personAccel_noise_mag^2 * [dt^4/4 dt^3/2; dt^3/2 dt^2]; % Ex convert the process noise (stdv) into covariance matrix
 P = Ex; % estimate of initial person position variance (covariance matrix)
 
-
-%% Do kalman filtering
 %initize estimation variables
 P_loc_estimate = []; % person position estimate
 vel_estimate = []; % person velocity estimate
@@ -138,25 +137,27 @@ for t = 1:length(P_loc_meas)
     X_estimate = A * X_estimate + B * u;
     % predict next covariance
     P = A * P * A'+ Ex;
-    % predicted person measurement covariance
     % Kalman Gain
     K = P*C'*inv(C*P*C'+R);
     % Update the state estimate.
     X_estimate = X_estimate + K * ([P_loc_meas(t); v_measure(t)] - C * X_estimate);
-    % update covariance estimation.
+    % Update covariance estimation.
     P =  (eye(2)-K*C)*P;
-    %Store for plotting
+    % Store for plotting
     P_loc_estimate = [P_loc_estimate; X_estimate(1)];
     vel_estimate = [vel_estimate; X_estimate(2)];
     P_mag_estimate = [P_mag_estimate; P(1)];
 end
 hold on;
 plot(P_loc_estimate,t_frame(101:end-101),'r')
+legend('estimated')
 
 %% Breathing
-% [distance, est] = meshgrid(distance_range,P_loc_estimate);
-% est_idx = sum(distance_range<P_loc_estimate,2); % this is not quite useful 
 
+% [distance, est] = meshgrid(distance_range,P_loc_estimate);
+% est_idx = sum(distance_range<P_loc_estimate,2); % remapping the index is not quite useful 
+
+% Compensate the phase change introduced by distance
 angle_d_compensated = zeros(1,2*floor((N_frame-101)/2)-100);
 for i = 101:2*floor((N_frame-101)/2)
     angle_d_compensated(i-100) = angle(RangeFFT(i,range_idx(i))) + 2*pi*f_start/c*(P_loc_estimate(i-100));
@@ -167,11 +168,12 @@ plot(unwrap(angle_d_compensated))
 
 bhFFT = fftshift(fft(unwrap(angle_d_compensated)));
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
+
 figure
 stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
 
-% breathing peak finding
+% Breathing peak finding
 bfiltered = abs(bhFFT);
 bfiltered((f<0.1) | (f>0.5)) = 0;
 [~, b_unfilt_idx] = findpeaks(bfiltered);
