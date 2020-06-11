@@ -45,7 +45,7 @@ ant = 1;
 
 %% Range FFT
 
-adc_sampled = adcData_breathing_heart_r2;
+adc_sampled = adcData_breathing_heart_t3(100:end-10,:,:);
 RangeFFT = fft(adc_sampled(:,:,ant),N_sample,2);
 N_frame = size(adc_sampled,1);
 t_frame = (1:size(adc_sampled,1))*T_frame;
@@ -87,13 +87,95 @@ range_idx = [range_idx(1); range_idx];
 % 
 % [~, angle_idx] = max(abs(AngleRangeFFT),[],2);
 
-%% Doppler FFT
+%% Doppler FFT (range limitation hard to estimate)
+%stft(RangeFFT,1/T_frame,'Window',kaiser(256,5),'OverlapLength',220,'FFTLength',512);
+% N_frame = N_frame/8;
+% 
+% DopplerFFT = fft(RangeFFT(1:N_frame,:),N_frame,1);
+% % max_index=find(RangeFFT(1,:)==max(RangeFFT(1,:)));
+% v_max = (c/(2*f_start))/T_frame;
+% v_res = v_max/(N_frame);
+% y_axis = v_res:v_res:v_max;
+% figure; imagesc(distance_range,y_axis,abs(DopplerFFT));
+% xlabel('Range')
+% ylabel('doppler')
 
-DopplerFFT = fft(RangeFFT,N_frame,1);
-max_index=find(RangeFFT(1,:)==max(RangeFFT(1,:)));
-v_max = (c/(2*f_start))*(f_breathing_samp);
-v_res = v_max/(N_chirps);
-y_axis = v_res:v_res:v_max;
-figure; imagesc(distance_range,y_axis,abs(DopplerFFT));
-xlabel('Range')
-ylabel('doppler')
+%v_init = (distance_range(range_idx(500))- distance_range(range_idx(400)))/100/T_frame;
+
+%% 1D Kalmen filter - ref: http://studentdavestutorials.weebly.com/kalman-filter-with-matlab-code.html
+
+dt = T_frame; % sample time
+P_loc_meas = distance_range(range_idx); % person path
+v_measure = diff(P_loc_meas)/dt;
+v_measure = movmean(v_measure,200);
+P_loc_meas = P_loc_meas(101:end-101);
+
+% Define update equations (Coefficent matrices): A physics based model for where we expect the person to be [state transition (state + velocity)] + [input control (acceleration)]
+A = [1 dt; 0 1] ; % state transition matrix
+B = [dt^2/2; dt]; % input control matrix
+C = [1 0; 0 1]; % measurement matrix, only measuring position
+
+% Define main variables
+u = 0; % define acceleration magnitude, constant velocity
+X = [P_loc_meas(1); -0.06]; % initized state- [position; velocity]
+X_estimate = X;  % x_estimate of initial location estimation of where the person is (what we are updating)
+personAccel_noise_mag = 1e-3; %process noise: the variability in how fast the person is speeding up (stdv of acceleration: meters/sec^2)
+Measure_noise_x = 0.05; % location measurement noise
+Measure_noise_v = 0.1; % velocity measurement noise
+R = [Measure_noise_x^2 0; 0 Measure_noise_v^2];% Ez convert the measurement noise (stdv) into covariance matrix
+Ex = personAccel_noise_mag^2 * [dt^4/4 dt^3/2; dt^3/2 dt^2]; % Ex convert the process noise (stdv) into covariance matrix
+P = Ex; % estimate of initial person position variance (covariance matrix)
+
+
+%% Do kalman filtering
+%initize estimation variables
+P_loc_estimate = []; % person position estimate
+vel_estimate = []; % person velocity estimate
+P_mag_estimate = [];
+
+for t = 1:length(P_loc_meas)
+    % Predict next state of the person with the last state and predicted motion.
+    X_estimate = A * X_estimate + B * u;
+    % predict next covariance
+    P = A * P * A'+ Ex;
+    % predicted person measurement covariance
+    % Kalman Gain
+    K = P*C'*inv(C*P*C'+R);
+    % Update the state estimate.
+    X_estimate = X_estimate + K * ([P_loc_meas(t); v_measure(t)] - C * X_estimate);
+    % update covariance estimation.
+    P =  (eye(2)-K*C)*P;
+    %Store for plotting
+    P_loc_estimate = [P_loc_estimate; X_estimate(1)];
+    vel_estimate = [vel_estimate; X_estimate(2)];
+    P_mag_estimate = [P_mag_estimate; P(1)];
+end
+hold on;
+plot(P_loc_estimate,t_frame(101:end-101),'r')
+
+%% Breathing
+% [distance, est] = meshgrid(distance_range,P_loc_estimate);
+% est_idx = sum(distance_range<P_loc_estimate,2); % this is not quite useful 
+
+angle_d_compensated = zeros(1,2*floor((N_frame-101)/2)-100);
+for i = 101:2*floor((N_frame-101)/2)
+    angle_d_compensated(i-100) = angle(RangeFFT(i,range_idx(i))) + 2*pi*f_start/c*(P_loc_estimate(i-100));
+end
+
+figure
+plot(unwrap(angle_d_compensated))
+
+bhFFT = fftshift(fft(unwrap(angle_d_compensated)));
+f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
+figure
+stem(f,10*log10(abs(bhFFT)))
+xlim([-2,2])
+
+% breathing peak finding
+bfiltered = abs(bhFFT);
+bfiltered((f<0.1) | (f>0.5)) = 0;
+[~, b_unfilt_idx] = findpeaks(bfiltered);
+b_filtered_idx = b_unfilt_idx((b_unfilt_idx>max(find(f<0.23))) & (b_unfilt_idx<min(find(f>0.42))));
+[~, b_filt_idx] = max(bfiltered(b_filtered_idx));
+b_idx = b_filtered_idx(b_filt_idx);
+fprintf("The breathing rate is "+f(b_idx)+"Hz.\n")
