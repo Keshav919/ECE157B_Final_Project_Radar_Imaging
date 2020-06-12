@@ -47,8 +47,8 @@ sRx = lambda/2;% separation between receivers
 ant = 1;
 
 % Range FFT
-for a=1:6
-adc_sampled = datasets{a}(100:end-10,:,:);
+for i=1:6
+adc_sampled = datasets{i}(100:end-10,:,:);
 RangeFFT = fft(adc_sampled(:,:,ant),N_sample,2);
 N_frame = size(adc_sampled,1);
 t_frame = (1:size(adc_sampled,1))*T_frame;
@@ -64,7 +64,6 @@ distance_range = c*tau_range/2;
 % Plot differentiated peaks
 figure
 imagesc(distance_range, t_frame, abs(diff(RangeFFT)))
-title("Range FFT for " + num2str(a))
 
 [~, range_idx] = max(abs(diff(RangeFFT)),[],2);
 range_idx = [range_idx(1); range_idx];
@@ -169,7 +168,6 @@ end
 
 figure
 plot(unwrap(angle_d_compensated))
-title("Unwrapped phase for motion compensated signal")
 
 bhFFT = fftshift(fft(unwrap(angle_d_compensated)));
 f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
@@ -177,8 +175,6 @@ f = 1/T_frame*(-length(bhFFT)/2:length(bhFFT)/2-1)/length(bhFFT);
 figure
 stem(f,10*log10(abs(bhFFT)))
 xlim([-2,2])
-title("Phase FFT for " + num2str(a))
-xlabel("Frequency (Hz)")
 
 % Breathing peak finding
 bfiltered = abs(bhFFT);
@@ -187,6 +183,6 @@ bfiltered((f<0.1) | (f>0.5)) = 0;
 b_filtered_idx = b_unfilt_idx((b_unfilt_idx>max(find(f<0.23))) & (b_unfilt_idx<min(find(f>0.42))));
 [~, b_filt_idx] = max(bfiltered(b_filtered_idx));
 b_idx = b_filtered_idx(b_filt_idx);
-fprintf("The breathing rate for test " + num2str(a) + " is "+f(b_idx)+"Hz.\n")
+fprintf("The breathing rate for test " + num2str(i) + " is "+f(b_idx)+"Hz.\n")
 
 end
