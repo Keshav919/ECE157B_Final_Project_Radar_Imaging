@@ -35,8 +35,8 @@ for i = 1:4
     tau_max = f_max/k;
     tau_range = 0:tau_resolution:tau_max-tau_resolution;
     distance_range = c*tau_range/2;
-    %figure; 
-    %plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
+    figure; 
+    plot(abs(mean(diff(RangeFFT(:,:,ant),1),1)))
     %[~, peak] = max(abs(mean(diff(RangeFFT(:,:,ant),1),1)));
     %fprintf("Dataset "+i+". The peak is at index "+peak+".\n")
     
